@@ -89,12 +89,15 @@ export default function BreadCrumb(): JSX.Element {
   function dynamicInputs() {
     const dynamic = URL.decompose.map((el: string, idx: number) => {
       return (
-        <div className={`bloc_input bloc_input_col`} key={`dynamic-input${idx}`}>
+        <div
+          className={`bloc_input bloc_input_col`}
+          key={`dynamic-input-${idx}`}
+        >
           <label>Name {idx}:</label>
           <div className="bloc_input_content">
             <input
               type="text"
-              defaultValue={el.replace('.html', '')}
+              value={el.replace('.html', '')}
               onKeyUp={debounce(() => { editName(idx) }, 300)}
               ref={(elem) => inputRef.current[idx] = elem}
             />
