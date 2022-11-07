@@ -10,6 +10,12 @@
     gap: 1rem;
   }
 
+  .format {
+    @include flex(row, flex-start, center);
+    gap: 1rem;
+    @include responsiveContainer(100%);
+  }
+
   details {
     @include flex(column);
     flex: 1;

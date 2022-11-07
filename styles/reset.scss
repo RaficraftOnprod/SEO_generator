@@ -174,5 +174,12 @@ a {
   @include responsiveContainer(100%);
 }
 
+.svg_container {
+  background-color: red;
+  @include size(2rem);
+  @include flexCenter();
+  cursor: pointer;
+}
+
 @import './basicTypo.scss';
 @import './form.scss';

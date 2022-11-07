@@ -3,6 +3,7 @@ import S from './Breadcrumb.module.scss';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { debounce } from '../../src/utils/debounce';
+import { IconOpenPadlock } from "../../src/assets/svg/icones";
 
 type URLTypes = {
   https: boolean,
@@ -19,15 +20,25 @@ export default function BreadCrumb(): JSX.Element {
     www: false,
     path: '',
     decompose: [],
-    name:[]
+    name: []
   });
-  const [breadcrumbJson, setBreadcrumbJson] = useState('Type your url on the input');
+
+  const [format, setFormat] = useState('javascript');
+  const [breadcrumbResult, setBreadcrumbResult] = useState<any>({
+    jsonLD: 'Type your url on the input',
+    javascript: 'Type your url on the input',
+    microformat: 'Type your url on the input'
+  })
 
   const regexURL = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/gm;
 
   const inputURL = useRef(null)
-  const [inputs, setInputs] = useState<JSX.Element[]>([])
+  const [inputs, setInputs] = useState<JSX.Element[] | boolean>(false)
   let inputRef = useRef<any>([]);
+
+
+  function changeFormat() { }
+
   function checkURL() {
 
     if (inputURL.current) {
@@ -35,7 +46,6 @@ export default function BreadCrumb(): JSX.Element {
       const path = input.value;
 
       if (regexURL.test(path)) {
-        setBreadcrumbJson('URL valide')
 
         const decomposeURL = path
           .replace(/http:\/\//, '')
@@ -56,83 +66,135 @@ export default function BreadCrumb(): JSX.Element {
 
 
       } else {
-        setBreadcrumbJson('URL invalide')
         setURL({
           https: false,
           www: false,
           path: '',
           decompose: [],
-          name:[],
+          name: [],
         })
       }
     }
   }
 
   function editName(idx: number) {
-
-    console.log(inputRef.current[idx].value)
     setURL((state) => {
       return {
         ...state,
-        name : {...state.name, [idx] : inputRef.current[idx].value}
+        name: { ...state.name, [idx]: inputRef.current[idx].value }
       }
     })
   }
 
-  function dynamicOption() {
+  function dynamicInputs() {
     const dynamic = URL.decompose.map((el: string, idx: number) => {
       return (
-        <div className={`bloc_input bloc_input__col`} key={`dynamic-input${idx}`}>
+        <div className={`bloc_input bloc_input_col`} key={`dynamic-input${idx}`}>
           <label>Name {idx}:</label>
-          <input
-            type="text"
-            defaultValue={el}
-            onKeyUp={debounce(() => { editName(idx) }, 300)}
-            ref={(elem) => inputRef.current[idx] = elem} />
+          <div className="bloc_input_content">
+            <input
+              type="text"
+              defaultValue={el.replace('.html', '')}
+              onKeyUp={debounce(() => { editName(idx) }, 300)}
+              ref={(elem) => inputRef.current[idx] = elem}
+            />
+            <div className='svg_container'>
+              <IconOpenPadlock />
+            </div>
+          </div>
         </div>
       )
     });
     setInputs(dynamic)
   }
 
-  function makeJsonLD() {
-    
-const res = 
-`<script type="application/ld+json">
+  function formatJsonLD() {
+
+    const res =
+      `<script type="application/ld+json">
   [{
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
-    "itemListElement": ${JSON.stringify(itemListElement(), null, 4)}
+    "itemListElement": ${JSON.stringify(jsonLDItem(), null, 4)}
   }]
 </script>`
     return res;
   }
 
-  function itemListElement() {
+  function formatJavascript() {
+    const res = `
+const structuredData = {
+"@context": "https:schema.org,
+"@type": "BreadcrumbList",
+itemListElement : [${javascriptItem()}]
+}
 
-    const res = URL.decompose.map((el, idx) => {  
-      
-      if (idx < URL.decompose.length - 1) {
-        return {
-        "@type": "ListItem",
-        "position": idx + 1,
-        "name": URL.name[idx],
-        "item": rebuildURL(idx),
-       }        
-      } else {
-        return {
-        "@type": "ListItem",
-        "position": idx + 1,
-        "name": URL.name[idx]
-       }
+<script
+  key="structured-data"
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+/>
+`
+    return String(res);
+  }
+
+  function javascriptItem() {
+
+    let res = '\n'
+
+    for (let i = 0; i < URL.decompose.length; i++) {
+      const element = URL.decompose[i];
+      if (i > 0) {
+
+        if (i < URL.decompose.length - 1) {
+          res += '\t{\n'
+          res += `\t\t@type: "listItem",\n`
+          res += `\t\tposition: "${i}",\n`
+          res += `\t\tname: "${URL.name[i]}",\n`
+          res += `\t\titem: "${rebuildURL(i).replace('.html', '')}",\n`
+          res += "\t},\n"
+        } else {
+          res += '\t{\n'
+          res += `\t\t@type: "listItem",\n`
+          res += `\t\tposition: "${i}",\n`
+          res += `\t\tname: "${URL.name[i].replace('.html', '')}",\n`
+          res += "\t},\n"
+        }
       }
-      
-    })
 
+    }
     return res;
   }
 
-    function rebuildURL(idx: number) {
+  function jsonLDItem() {
+
+    const res = []
+
+    for (let i = 0; i < URL.decompose.length; i++) {
+      const element = URL.decompose[i];
+
+      if (i > 0) {
+
+        if (i < URL.decompose.length - 1) {
+          res.push({
+            "@type": "ListItem",
+            "position": i,
+            "name": URL.name[i].replace('.html', ''),
+            "item": rebuildURL(i),
+          })
+        } else {
+          res.push({
+            "@type": "ListItem",
+            "position": i,
+            "name": URL.name[i].replace('.html', '')
+          })
+        }
+      }
+    }
+    return res;
+  }
+
+  function rebuildURL(idx: number) {
     let res = ''
     res += URL.https ? 'https://' : 'http://';
     res += URL.www ? 'www.' : '';
@@ -143,43 +205,94 @@ const res =
       } else { return null }
     }).join('')
 
-    res += dynamic
-
-
+    res += dynamic;
     return res;
   }
 
-
   useEffect(() => {
-    if (URL.path) {     
-      dynamicOption();
-    }
+    setInputs(false)
   }, [URL])
 
 
   useEffect(() => {
-     if (URL.path) {          
-      setBreadcrumbJson(makeJsonLD());
-    }
-  }, [URL])
-  
-  useEffect(() => {
-     console.log('work data', URL.name )
-  },[URL])
+    if (URL.path) {
+      dynamicInputs();
 
+      switch (format) {
+        case 'jsonLD':
+          // setBreadcrumbJson(formatJsonLD());
+          setBreadcrumbResult({
+            jsonLD: formatJsonLD(),
+            javascript: '',
+            microformat: ''
+          })
+          break;
+        case 'javascript':
+          setBreadcrumbResult({
+            jsonLD: '',
+            javascript: formatJavascript(),
+            microformat: ''
+          })
+          break;
+      }
+    }
+  }, [URL, format]);
 
   return (
     <section className={`main_content ${S.container}`}>
       <header>
 
-        <div className={`bloc_input`}>
+        <div className={`bloc_input full_width`}>
           <input
+            type="text"
             placeholder="Type your URL"
-            onKeyUp={debounce(() => { checkURL() }, 300)}
+            onKeyUp={debounce(() => {
+              checkURL()
+            }, 300)}
             ref={inputURL}
             defaultValue=""
           />
         </div>
+        {URL.path ? (
+          <div className={S.format}>
+            <div className={`bloc_input`}>
+              <label htmlFor="javascript">Javascript</label>
+              <input
+                type="radio"
+                id="javascript"
+                name="format"
+                defaultValue="javascript"
+                onClick={() => { setFormat('javascript') }}
+                checked={format === 'javascript'}
+              />
+            </div>
+
+            <div className={`bloc_input`}>
+              <label htmlFor="jsonLD">JsonLD</label>
+              <input
+                type="radio"
+                id="jsonLD"
+                name="format"
+                defaultValue="jsonLD"
+                onClick={() => { setFormat('jsonLD') }}
+                checked={format === 'jsonLD'}
+              />
+            </div>
+
+            <div className={`bloc_input`}>
+              <label htmlFor="microformat">microformat</label>
+              <input
+                type="radio"
+                id="microformat"
+                name="format"
+                defaultValue="microformat"
+                onClick={() => { setFormat('microformat') }}
+                checked={format === 'microformat'}
+              />
+            </div>
+          </div>
+        ) : null}
+
 
       </header>
 
@@ -189,11 +302,13 @@ const res =
             language="javascript"
             style={atomDark}
           >
-            {`${breadcrumbJson}`}
+            {/* {`${breadcrumbJson}`} */}
+            {breadcrumbResult[format]}
+
           </SyntaxHighlighter>
         </div>
 
-        {URL.path ?
+        {URL.path && inputs ?
           (<details>
             <summary>Options</summary>
             <div className="full_width">

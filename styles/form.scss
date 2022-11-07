@@ -2,20 +2,25 @@
 
 .bloc_input {
   padding: 0.25rem 0;
-  @include responsiveContainer(100%);
   @include flex(row, flex-start, center);
   margin: 0 0 1rem 0;
 
-  &__row {
+  &_row {
     gap: 1rem;
   }
 
-  &__col {
+  &_col {
     @include flex(column);
     gap: 0.5rem;
   }
 
-  input {
+  &_content {
+    @include responsiveContainer(100%);
+    @include flex(row, space-between, center);
+    gap: 1rem;
+  }
+
+  input[type=text] {
     width: 100%;
     padding: 0.75rem;
     border-radius: 0.25rem;

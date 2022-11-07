@@ -6,12 +6,12 @@ import { Footer } from "./Footer/Footer";
 export function Layout({children}: {children : JSX.Element | JSX.Element}): JSX.Element {
   return (
     <>
-      <Header></Header>
+      {/* <Header></Header> */}
       <main>
         <Aside></Aside>
           {children}        
       </main>
-      <Footer></Footer>
+      {/* <Footer></Footer> */}
     </>
   )
 }
