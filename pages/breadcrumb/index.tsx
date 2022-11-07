@@ -96,17 +96,12 @@ export default function BreadCrumb(): JSX.Element {
             key={`dynamic-input-${idx}`}
           >
             <label>Name {idx}:</label>
-            <div className="bloc_input_content">
-              <input
-                type="text"
-                value={el.replace('.html', '')}
-                onKeyUp={debounce(() => { editName(idx) }, 300)}
-                ref={(elem) => inputRef.current[idx] = elem}
-              />
-              <div className='svg_container'>
-                <IconOpenPadlock />
-              </div>
-            </div>
+            <input
+              type="text"
+              value={el.replace('.html', '')}
+              onKeyUp={debounce(() => { editName(idx) }, 300)}
+              ref={(elem) => inputRef.current[idx] = elem}
+            />
           </div>
         )
       } else {
