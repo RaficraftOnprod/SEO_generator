@@ -1,0 +1,25 @@
+@import "./mixin/mixin.scss";
+
+.bloc_input {
+  padding: 0.25rem 0;
+  @include responsiveContainer(100%);
+  @include flex(row, flex-start, center);
+  margin: 0 0 1rem 0;
+
+  &__row {
+    gap: 1rem;
+  }
+
+  &__col {
+    @include flex(column);
+    gap: 0.5rem;
+  }
+
+  input {
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: 0.25rem;
+    border: none;
+    font-size: 1.125rem;
+  }
+}

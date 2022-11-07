@@ -1,0 +1,8 @@
+@import "../../../../styles/mixin/mixin.scss";
+@import "../../../../styles/typo.scss";
+
+.container {
+  background-color: rgb(26, 26, 26);
+  @include responsiveContainer(100%);
+  padding: 0.5rem 1rem;
+}
