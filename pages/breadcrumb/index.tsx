@@ -33,7 +33,7 @@ export default function BreadCrumb(): JSX.Element {
   const regexURL = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/gm;
 
   const inputURL = useRef(null)
-  const [inputs, setInputs] = useState<JSX.Element[] | boolean>(false)
+  const [inputs, setInputs] = useState<any>(false)
   let inputRef = useRef<any>([]);
 
 
@@ -88,25 +88,31 @@ export default function BreadCrumb(): JSX.Element {
 
   function dynamicInputs() {
     const dynamic = URL.decompose.map((el: string, idx: number) => {
-      return (
-        <div
-          className={`bloc_input bloc_input_col`}
-          key={`dynamic-input-${idx}`}
-        >
-          <label>Name {idx}:</label>
-          <div className="bloc_input_content">
-            <input
-              type="text"
-              value={el.replace('.html', '')}
-              onKeyUp={debounce(() => { editName(idx) }, 300)}
-              ref={(elem) => inputRef.current[idx] = elem}
-            />
-            <div className='svg_container'>
-              <IconOpenPadlock />
+      if (idx > 0) {
+        return (
+
+          <div
+            className={`bloc_input bloc_input_col`}
+            key={`dynamic-input-${idx}`}
+          >
+            <label>Name {idx}:</label>
+            <div className="bloc_input_content">
+              <input
+                type="text"
+                value={el.replace('.html', '')}
+                onKeyUp={debounce(() => { editName(idx) }, 300)}
+                ref={(elem) => inputRef.current[idx] = elem}
+              />
+              <div className='svg_container'>
+                <IconOpenPadlock />
+              </div>
             </div>
           </div>
-        </div>
-      )
+        )
+      } else {
+        return []
+      }
+
     });
     setInputs(dynamic)
   }
