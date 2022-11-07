@@ -223,7 +223,6 @@ itemListElement : [${javascriptItem()}]
 
       switch (format) {
         case 'jsonLD':
-          // setBreadcrumbJson(formatJsonLD());
           setBreadcrumbResult({
             jsonLD: formatJsonLD(),
             javascript: '',
@@ -304,10 +303,9 @@ itemListElement : [${javascriptItem()}]
           <SyntaxHighlighter
             language="javascript"
             style={atomDark}
+            wrapLongLines={true}
           >
-            {/* {`${breadcrumbJson}`} */}
             {breadcrumbResult[format]}
-
           </SyntaxHighlighter>
         </div>
 
