@@ -121,6 +121,7 @@ export default function BreadCrumb(): JSX.Element {
   [{
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
+    itemListOrder: 'ItemListOrderAscending',
     "itemListElement": ${JSON.stringify(jsonLDItem(), null, 4)}
   }]
 </script>`
@@ -132,6 +133,7 @@ export default function BreadCrumb(): JSX.Element {
 const structuredData = [{
 '@context': 'https://schema.org',
 '@type': 'BreadcrumbList',
+itemListOrder: 'ItemListOrderAscending',
 itemListElement: [${javascriptItem()}]
 }]
 
