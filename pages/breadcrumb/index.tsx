@@ -129,11 +129,11 @@ export default function BreadCrumb(): JSX.Element {
 
   function formatJavascript() {
     const res = `
-const structuredData = {
+const structuredData = [{
 '@context': 'https://schema.org',
 '@type': 'BreadcrumbList',
 itemListElement: [${javascriptItem()}]
-}
+}]
 
 <script
   key="structured-data"
