@@ -13,6 +13,8 @@ type URLTypes = {
   name: string[]
 }
 
+console.log('test');
+
 export default function BreadCrumb(): JSX.Element {
 
   const [URL, setURL] = useState<URLTypes>({
