@@ -155,14 +155,14 @@ itemListElement: [${javascriptItem()}]
         if (i < URL.decompose.length - 1) {
           res += '\t{\n'
           res += `\t\t'@type': 'listItem',\n`
-          res += `\t\tposition: '${i}',\n`
+          res += `\t\tposition: ${i},\n`
           res += `\t\tname: '${URL.name[i]}',\n`
           res += `\t\titem: '${rebuildURL(i).replace('.html', '')}',\n`
           res += "\t},\n"
         } else {
           res += '\t{\n'
           res += `\t\t'@type': 'listItem',\n`
-          res += `\t\tposition: '${i}',\n`
+          res += `\t\tposition: ${i},\n`
           res += `\t\tname: '${URL.name[i].replace('.html', '')}',\n`
           res += '\t},\n'
         }
