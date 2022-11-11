@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, createRef } from "react";
+import ReactDOMServer from 'react-dom/server';
 import S from './Breadcrumb.module.scss';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
@@ -13,6 +14,17 @@ type URLTypes = {
   name: string[]
 }
 
+const BreadcrumbResultMicroData = (structuredData: any, type: string): string | JSX.Element => {
+  console.log(structuredData)
+
+  if (type === 'string') {
+    return (ReactDOMServer.renderToString(<h1>TOTO</h1>))
+  } else {
+    return (<h1>TOTO</h1>)
+  }
+}
+
+
 console.log('test');
 
 export default function BreadCrumb(): JSX.Element {
@@ -25,11 +37,13 @@ export default function BreadCrumb(): JSX.Element {
     name: []
   });
 
+  const [description, setDescription] = useState<string>('')
+
   const [format, setFormat] = useState('javascript');
   const [breadcrumbResult, setBreadcrumbResult] = useState<any>({
     jsonLD: 'Type your url on the input',
     javascript: 'Type your url on the input',
-    microformat: 'Type your url on the input'
+    microdata: 'Type your url on the input'
   })
 
   const regexURL = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/gm;
@@ -37,9 +51,7 @@ export default function BreadCrumb(): JSX.Element {
   const inputURL = useRef(null)
   const [inputs, setInputs] = useState<any>(false)
   let inputRef = useRef<any>([]);
-
-
-  function changeFormat() { }
+  let inputDescription = useRef<any>([])
 
   function checkURL() {
 
@@ -80,6 +92,7 @@ export default function BreadCrumb(): JSX.Element {
   }
 
   function editName(idx: number) {
+    console.log('what')
     setURL((state) => {
       return {
         ...state,
@@ -88,21 +101,56 @@ export default function BreadCrumb(): JSX.Element {
     })
   }
 
-  function dynamicInputs() {
-    const dynamic = URL.decompose.map((el: string, idx: number) => {
-      if (idx > 0) {
-        return (
+  function editDescription() {
+    setDescription(inputDescription.current.value)
+  }
 
+  function dynamicInputs() {
+
+    const dynamic = URL.decompose.map((el: string, idx: number) => {
+      if (idx === URL.decompose.length - 1) {
+        return (<div key={`nested-input-${idx}`} >
           <div
             className={`bloc_input bloc_input_col`}
             key={`dynamic-input-${idx}`}
           >
-            <label>Name {idx}:</label>
+            <label>Link {idx}:</label>
             <input
               type="text"
-              value={el.replace('.html', '')}
+              defaultValue={el.replace('.html', '')}
               onKeyUp={debounce(() => { editName(idx) }, 300)}
               ref={(elem) => inputRef.current[idx] = elem}
+            />
+          </div>
+
+          <div
+            className={`bloc_input bloc_input_col bloc_input_nested`}
+            key={`description-${idx}`}
+          >
+            <label>Link {idx} description:</label>
+            <input
+              type="text"
+              placeholder="Enter a description of the page (optionnal)"
+              defaultValue=""
+              onKeyUp={debounce(() => { editDescription() }, 300)}
+              ref={(elem) => inputDescription.current = elem}
+            />
+          </div>
+        </div>)
+      }
+      if (idx > 0 && idx < URL.decompose.length - 1) {
+        return (
+          <div
+            className={`bloc_input bloc_input_col`}
+            key={`dynamic-input-${idx}`}
+          >
+            <label>Link {idx}:</label>
+            <input
+              type="text"
+              defaultValue={el.replace('.html', '')}
+              onKeyUp={debounce(() => { editName(idx) }, 300)}
+              ref={(elem) => inputRef.current[idx] = elem}
+
             />
           </div>
         )
@@ -115,6 +163,9 @@ export default function BreadCrumb(): JSX.Element {
   }
 
   function formatJsonLD() {
+    if (URL.decompose.length === 0) {
+      return 'Type your url on the input'
+    }
 
     const res =
       `<script type="application/ld+json">
@@ -122,20 +173,28 @@ export default function BreadCrumb(): JSX.Element {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListOrder: 'ItemListOrderAscending',
-    "itemListElement": ${JSON.stringify(jsonLDItem(), null, 4)}
+    "itemListElement": [${JSON.stringify(jsonLDItem(), null, 4)}]
   }]
 </script>`
     return res;
   }
 
   function formatJavascript() {
+    if (URL.decompose.length === 0) {
+      return 'Type your url on the input'
+    }
+
     const res = `
-const structuredData = [{
-'@context': 'https://schema.org',
-'@type': 'BreadcrumbList',
-itemListOrder: 'ItemListOrderAscending',
-itemListElement: [${javascriptItem()}]
-}]
+  const structuredData = 
+[{
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListOrder: 'ItemListOrderAscending',
+  itemListElement: 
+  [{
+    ${JSON.stringify(jsonLDItem(), null, '\t').slice(7, -3).trim()}
+  }]
+}];
 
 <script
   key="structured-data"
@@ -143,40 +202,14 @@ itemListElement: [${javascriptItem()}]
   dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
 />
 `
-    return String(res);
+    return String(res.trim());
   }
 
-  function javascriptItem() {
-
-    let res = '\n'
-
-    for (let i = 0; i < URL.decompose.length; i++) {
-      const element = URL.decompose[i];
-      if (i > 0) {
-
-        if (i < URL.decompose.length - 1) {
-          res += '\t{\n'
-          res += `\t\t'@type': 'listItem',\n`
-          res += `\t\tposition: ${i},\n`
-          res += `\t\tname: '${URL.name[i]}',\n`
-          res += `\t\titem: '${rebuildURL(i).replace('.html', '')}',\n`
-          res += "\t},\n"
-        } else {
-          res += '\t{\n'
-          res += `\t\t'@type': 'listItem',\n`
-          res += `\t\tposition: ${i},\n`
-          res += `\t\tname: '${URL.name[i].replace('.html', '')}',\n`
-          res += '\t},\n'
-        }
-      }
-
-    }
-    return res;
-  }
 
   function jsonLDItem() {
 
-    const res = []
+    let res = []
+    let obj: any = {}
 
     for (let i = 0; i < URL.decompose.length; i++) {
       const element = URL.decompose[i];
@@ -184,23 +217,32 @@ itemListElement: [${javascriptItem()}]
       if (i > 0) {
 
         if (i < URL.decompose.length - 1) {
-          res.push({
+          obj = {
             "@type": "ListItem",
             "position": i,
             "name": URL.name[i].replace('.html', ''),
             "item": rebuildURL(i),
-          })
+          }
+
         } else {
-          res.push({
+          obj = {
             "@type": "ListItem",
             "position": i,
             "name": URL.name[i].replace('.html', '')
-          })
+          }
+
+          if (i === URL.decompose.length - 1 && description) {
+            obj.description = description
+          }
         }
+
+        res.push(obj)
       }
     }
     return res;
   }
+
+
 
   function rebuildURL(idx: number) {
     let res = ''
@@ -219,7 +261,20 @@ itemListElement: [${javascriptItem()}]
 
   useEffect(() => {
     setInputs(false)
+    setDescription('')
+    setBreadcrumbResult(
+      {
+        jsonLD: 'Type your url on the input',
+        javascript: 'Type your url on the input',
+        microdata: 'Type your url on the input'
+      }
+    )
   }, [URL])
+
+  function oula() {
+
+    return BreadcrumbResultMicroData(URL, 'string');
+  }
 
 
   useEffect(() => {
@@ -231,19 +286,26 @@ itemListElement: [${javascriptItem()}]
           setBreadcrumbResult({
             jsonLD: formatJsonLD(),
             javascript: '',
-            microformat: ''
+            microdata: ''
           })
           break;
         case 'javascript':
           setBreadcrumbResult({
             jsonLD: '',
             javascript: formatJavascript(),
-            microformat: ''
+            microdata: ''
+          })
+          break;
+        case 'microdata':
+          setBreadcrumbResult({
+            jsonLD: '',
+            javascript: '',
+            microdata: oula(),
           })
           break;
       }
     }
-  }, [URL, format]);
+  }, [URL, format, description]);
 
   return (
     <section className={`main_content ${S.container}`}>
@@ -287,14 +349,14 @@ itemListElement: [${javascriptItem()}]
             </div>
 
             <div className={`bloc_input`}>
-              <label htmlFor="microformat">microformat</label>
+              <label htmlFor="microdata">microdata</label>
               <input
                 type="radio"
-                id="microformat"
+                id="microdata"
                 name="format"
-                defaultValue="microformat"
-                onClick={() => { setFormat('microformat') }}
-                checked={format === 'microformat'}
+                defaultValue="microdata"
+                onClick={() => { setFormat('microdata') }}
+                checked={format === 'microdata'}
               />
             </div>
           </div>
@@ -315,8 +377,8 @@ itemListElement: [${javascriptItem()}]
         </div>
 
         {URL.path && inputs ?
-          (<details>
-            <summary>Options</summary>
+          (<details open>
+            <summary>Name of links</summary>
             <div className="full_width">
               {inputs}
             </div>
@@ -329,4 +391,5 @@ itemListElement: [${javascriptItem()}]
     </section>
   )
 }
+
 
