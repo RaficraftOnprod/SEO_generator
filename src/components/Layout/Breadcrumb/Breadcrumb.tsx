@@ -4,9 +4,8 @@ import S from './Breadcrumb.module.scss'
 
 export default function BreadCrumb({ structuredData }: any): JSX.Element {
 
-  const { UI, dispatch } = useContext(UI_context) as UI_context_type;
+  const { UI } = useContext(UI_context) as UI_context_type;
 
-  console.log(UI.breadcrumb)
 
   return (
     <nav className={S.breadcrumb}>

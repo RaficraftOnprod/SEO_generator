@@ -15,85 +15,6 @@ type URLTypes = {
   name: string[]
 }
 
-enum Format {
-  Javascipt = 'JAVASCRIPT',
-  JsonLD = 'JSONLD',
-  Microdata = 'MICRODATA',
-  JSX = 'JSX'
-}
-
-// const BreadcrumbResultMicroData = (URL: URLTypes, type: string): string | JSX.Element => {
-//   console.log(URL)
-
-//   function makeBreadscrumb() {
-//     for (let i = 0; i < URL.decompose.length; i++) {
-//       const element = URL.decompose[i];
-
-//       if (i > 0) {
-
-//         if (i < URL.decompose.length - 1) {
-//           obj = {
-//             "@type": "ListItem",
-//             "position": i,
-//             "name": URL.name[i].replace('.html', ''),
-//             "item": rebuildURL(i),
-//           }
-
-//         } else {
-//           obj = {
-//             "@type": "ListItem",
-//             "position": i,
-//             "name": URL.name[i].replace('.html', '')
-//           }
-
-//           if (i === URL.decompose.length - 1 && description) {
-//             obj.description = description
-//           }
-//         }
-
-//         res.push(obj)
-//       }
-//     }
-//   }
-
-//   if (type === 'string') {
-//     return (ReactDOMServer.renderToString(<>
-
-//       {/* <ol itemScope itemType="https://schema.org/BreadcrumbList">
-//         <li itemProp="itemListElement" itemScope
-//           itemType="https://schema.org/ListItem">
-//           <a itemProp="item" href="https://example.com/books">
-//             <span itemProp="name">Books</span></a>
-//           <meta itemProp="position" content="1" />
-//         </li>
-//         ›
-//         <li itemProp="itemListElement" itemScope
-//           itemType="https://schema.org/ListItem">
-//           <a itemScope itemType="https://schema.org/WebPage"
-//             itemProp="item" itemID="https://example.com/books/sciencefiction"
-//             href="https://example.com/books/sciencefiction">
-//             <span itemProp="name">Science Fiction</span></a>
-//           <meta itemProp="position" content="2" />
-//         </li>
-//         ›
-//         <li itemProp="itemListElement" itemScope
-//           itemType="https://schema.org/ListItem">
-//           <span itemProp="name">Award winners</span>
-//           <meta itemProp="position" content="3" />
-//         </li>
-//       </ol>
-//        */}
-
-//       {makeBreadscrumb()}
-
-//     </>))
-//   } else {
-//     return (<h1>TOTO</h1>)
-//   }
-// }
-
-
-console.log('test');
 
 export default function BreadCrumb(): JSX.Element {
 
@@ -164,7 +85,6 @@ export default function BreadCrumb(): JSX.Element {
   }
 
   function editName(idx: number) {
-    console.log('what')
     setURL((state) => {
       return {
         ...state,
@@ -174,7 +94,6 @@ export default function BreadCrumb(): JSX.Element {
   }
 
   function editDescription() {
-    console.log(inputDescription.current.value)
     setDescription(inputDescription.current.value)
   }
 
@@ -182,19 +101,20 @@ export default function BreadCrumb(): JSX.Element {
 
     const dynamic = URL.decompose.map((el: string, idx: number) => {
 
-      const pageInput = <div
-        className={`bloc_input bloc_input_col`}
-        key={`dynamic-input-${idx}`}
-      >
-        <label>Link {idx}:</label>
-        <input
-          type="text"
-          defaultValue={el.replace('.html', '')}
-          onKeyUp={debounce(() => { editName(idx) }, 300)}
-          ref={(elem) => inputRef.current[idx] = elem}
+      const pageInput =
+        <div
+          className={`bloc_input bloc_input_col`}
+          key={`dynamic-input-${idx}`}
+        >
+          <label>Link {idx}:</label>
+          <input
+            type="text"
+            defaultValue={el.replace('.html', '')}
+            onKeyUp={debounce(() => { editName(idx) }, 300)}
+            ref={(elem) => inputRef.current[idx] = elem}
 
-        />
-      </div>
+          />
+        </div>
 
       if (idx === URL.decompose.length - 1) {
         return (
@@ -228,7 +148,7 @@ export default function BreadCrumb(): JSX.Element {
   // Traitements
 
 
-  function outputformated(type: string): string {
+  function outputFormated(type: string): string {
 
     if (URL.decompose.length === 0) {
       return 'Type your url on the input'
@@ -251,12 +171,15 @@ export default function BreadCrumb(): JSX.Element {
 
         output =
           `<script type="application/ld+json">
+[{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListOrder: 'ItemListOrderAscending',
+    itemListElement:
   [{
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListOrder: 'ItemListOrderAscending',
-    "itemListElement": [${JSON.stringify(jsonLDItem(), null, 4)}]
+    ${JSON.stringify(jsonLDItem(), null, '\t').slice(7, -3).trim()}
   }]
+}]
 </script>`
         return output;
 
@@ -348,7 +271,6 @@ export default function BreadCrumb(): JSX.Element {
           }
 
           if (i === URL.decompose.length - 1 && description) {
-            console.log('ola')
             obj.description = description
           }
         }
@@ -396,7 +318,7 @@ export default function BreadCrumb(): JSX.Element {
       switch (format) {
         case 'jsonLD':
           setBreadcrumbResult({
-            jsonLD: outputformated('jsonLD'),
+            jsonLD: outputFormated('jsonLD'),
             javascript: '',
             microdata: ''
           })
@@ -404,7 +326,7 @@ export default function BreadCrumb(): JSX.Element {
         case 'javascript':
           setBreadcrumbResult({
             jsonLD: '',
-            javascript: outputformated('javascript'),
+            javascript: outputFormated('javascript'),
             microdata: ''
           })
           break;
@@ -412,7 +334,7 @@ export default function BreadCrumb(): JSX.Element {
           setBreadcrumbResult({
             jsonLD: '',
             javascript: '',
-            microdata: outputformated('microdata'),
+            microdata: outputFormated('microdata'),
           })
           break;
       }

@@ -56,8 +56,6 @@ const InitialState =
 
 export const UI_context = createContext<UI_context_type | null>(null);
 export default function UI_provider({ children }: UI_Provider_props) {
-
-  console.log('initial context')
   /**
    * Modal Initial Context
    */
