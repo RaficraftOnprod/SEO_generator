@@ -181,5 +181,11 @@ a {
   cursor: pointer;
 }
 
+.cursor {
+  cursor: pointer;
+}
+
 @import './basicTypo.scss';
 @import './form.scss';
+@import './typo.scss';
+@import './UI.scss';

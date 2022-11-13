@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, createRef } from "react";
+import { useEffect, useRef, useState, createRef, useContext } from "react";
 import ReactDOMServer from 'react-dom/server';
 import S from './Breadcrumb.module.scss';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { debounce } from '../../src/utils/debounce';
 import { IconOpenPadlock } from "../../src/assets/svg/icones";
+import { UI_context, UI_context_type } from "../../src/context/UI_Provider";
 
 type URLTypes = {
   https: boolean,
@@ -12,6 +13,13 @@ type URLTypes = {
   path: string,
   decompose: string[],
   name: string[]
+}
+
+enum Format {
+  Javascipt = 'JAVASCRIPT',
+  JsonLD = 'JSONLD',
+  Microdata = 'MICRODATA',
+  JSX = 'JSX'
 }
 
 // const BreadcrumbResultMicroData = (URL: URLTypes, type: string): string | JSX.Element => {
@@ -89,6 +97,7 @@ console.log('test');
 
 export default function BreadCrumb(): JSX.Element {
 
+  const { UI, dispatch } = useContext(UI_context) as UI_context_type
   const [URL, setURL] = useState<URLTypes>({
     https: false,
     www: false,
@@ -97,7 +106,7 @@ export default function BreadCrumb(): JSX.Element {
     name: []
   });
 
-  const [description, setDescription] = useState<string>('')
+  const [description, setDescription] = useState<string | false>(false)
 
   const [format, setFormat] = useState('javascript');
   const [breadcrumbResult, setBreadcrumbResult] = useState<any>({
@@ -105,6 +114,7 @@ export default function BreadCrumb(): JSX.Element {
     javascript: 'Type your url on the input',
     microdata: 'Type your url on the input'
   })
+  const [breadcrumbJSX, setBreadcrumbJSX] = useState([])
 
   const regexURL = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/gm;
 
@@ -112,6 +122,8 @@ export default function BreadCrumb(): JSX.Element {
   const [inputs, setInputs] = useState<any>(false)
   let inputRef = useRef<any>([]);
   let inputDescription = useRef<any>([])
+
+  //Handler
 
   function checkURL() {
 
@@ -162,58 +174,49 @@ export default function BreadCrumb(): JSX.Element {
   }
 
   function editDescription() {
+    console.log(inputDescription.current.value)
     setDescription(inputDescription.current.value)
   }
 
   function dynamicInputs() {
 
     const dynamic = URL.decompose.map((el: string, idx: number) => {
-      if (idx === URL.decompose.length - 1) {
-        return (<div key={`nested-input-${idx}`} >
-          <div
-            className={`bloc_input bloc_input_col`}
-            key={`dynamic-input-${idx}`}
-          >
-            <label>Link {idx}:</label>
-            <input
-              type="text"
-              defaultValue={el.replace('.html', '')}
-              onKeyUp={debounce(() => { editName(idx) }, 300)}
-              ref={(elem) => inputRef.current[idx] = elem}
-            />
-          </div>
 
-          <div
-            className={`bloc_input bloc_input_col bloc_input_nested`}
-            key={`description-${idx}`}
-          >
-            <label>Link {idx} description:</label>
-            <input
-              type="text"
-              placeholder="Enter a description of the page (optionnal)"
-              defaultValue=""
-              onKeyUp={debounce(() => { editDescription() }, 300)}
-              ref={(elem) => inputDescription.current = elem}
-            />
-          </div>
-        </div>)
+      const pageInput = <div
+        className={`bloc_input bloc_input_col`}
+        key={`dynamic-input-${idx}`}
+      >
+        <label>Link {idx}:</label>
+        <input
+          type="text"
+          defaultValue={el.replace('.html', '')}
+          onKeyUp={debounce(() => { editName(idx) }, 300)}
+          ref={(elem) => inputRef.current[idx] = elem}
+
+        />
+      </div>
+
+      if (idx === URL.decompose.length - 1) {
+        return (
+          <div key={`nested-input-${idx}`} >
+            {pageInput}
+            <div
+              className={`bloc_input bloc_input_col bloc_input_nested`}
+              key={`description-${idx}`}
+            >
+              <label>Page description:</label>
+              <input
+                type="text"
+                placeholder="Enter a description of the page (optionnal)"
+                defaultValue=""
+                onKeyUp={debounce(() => { editDescription() }, 300)}
+                ref={(elem) => inputDescription.current = elem}
+              />
+            </div>
+          </div>)
       }
       if (idx > 0 && idx < URL.decompose.length - 1) {
-        return (
-          <div
-            className={`bloc_input bloc_input_col`}
-            key={`dynamic-input-${idx}`}
-          >
-            <label>Link {idx}:</label>
-            <input
-              type="text"
-              defaultValue={el.replace('.html', '')}
-              onKeyUp={debounce(() => { editName(idx) }, 300)}
-              ref={(elem) => inputRef.current[idx] = elem}
-
-            />
-          </div>
-        )
+        return pageInput
       } else {
         return []
       }
@@ -222,13 +225,32 @@ export default function BreadCrumb(): JSX.Element {
     setInputs(dynamic)
   }
 
-  function formatJsonLD() {
+  // Traitements
+
+
+  function outputformated(type: string): string {
+
     if (URL.decompose.length === 0) {
       return 'Type your url on the input'
     }
 
-    const res =
-      `<script type="application/ld+json">
+    let output = ''
+
+    switch (type) {
+
+      case 'microdata':
+
+        output +=
+          `<ol itemScope itemType="https://schema.org/BreadcrumbList">
+    ${htmlItem().trim()}
+</ol>`
+
+        return output.trim();
+
+      case 'jsonLD':
+
+        output =
+          `<script type="application/ld+json">
   [{
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -236,15 +258,11 @@ export default function BreadCrumb(): JSX.Element {
     "itemListElement": [${JSON.stringify(jsonLDItem(), null, 4)}]
   }]
 </script>`
-    return res;
-  }
+        return output;
 
-  function formatJavascript() {
-    if (URL.decompose.length === 0) {
-      return 'Type your url on the input'
-    }
+      default:
 
-    const res = `
+        output = `
   const structuredData = 
 [{
   '@context': 'https://schema.org',
@@ -262,9 +280,48 @@ export default function BreadCrumb(): JSX.Element {
   dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
 />
 `
-    return String(res.trim());
+        return output.trim();
+    }
+
   }
 
+  // Utils
+
+  function htmlItem() {
+    let res = ''
+
+    for (let i = 0; i < URL.decompose.length; i++) {
+
+      if (i > 0) {
+
+        res +=
+          `   <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">`
+
+        if (i < URL.decompose.length - 1) {
+          res +=
+            `<a itemProp="item" href="https://example.com/books">
+        <span itemProp="name">Books</span></a>
+        <meta itemProp="position" content="1" />`
+
+        } else {
+          res +=
+            `<a itemProp="item" href="https://example.com/books">
+        <span itemProp="name">Books</span></a>
+        <meta itemProp="position" content="1" />
+          `
+
+          if (i === URL.decompose.length - 1 && description) {
+            res +=
+              `<meta itemProp="description" content="${description}" />`
+          }
+        }
+
+        res += `\n\t</li>\n`
+
+      }
+    }
+    return res;
+  }
 
   function jsonLDItem() {
 
@@ -272,7 +329,6 @@ export default function BreadCrumb(): JSX.Element {
     let obj: any = {}
 
     for (let i = 0; i < URL.decompose.length; i++) {
-      const element = URL.decompose[i];
 
       if (i > 0) {
 
@@ -292,6 +348,7 @@ export default function BreadCrumb(): JSX.Element {
           }
 
           if (i === URL.decompose.length - 1 && description) {
+            console.log('ola')
             obj.description = description
           }
         }
@@ -301,8 +358,6 @@ export default function BreadCrumb(): JSX.Element {
     }
     return res;
   }
-
-
 
   function rebuildURL(idx: number) {
     let res = ''
@@ -319,17 +374,11 @@ export default function BreadCrumb(): JSX.Element {
     return res;
   }
 
-  function breadcrumbResultMicroData(URL: URLTypes, type: string) {
-    if (type === 'string') {
-      return ReactDOMServer.renderToString(<h1>TOTO</h1>)
-    } else {
-      return <h1>TATA</h1>
-    }
-  }
+
 
   useEffect(() => {
     setInputs(false)
-    setDescription('')
+    setDescription(false)
     setBreadcrumbResult(
       {
         jsonLD: 'Type your url on the input',
@@ -337,13 +386,8 @@ export default function BreadCrumb(): JSX.Element {
         microdata: 'Type your url on the input'
       }
     )
+    dispatch.breadcrumb(jsonLDItem())
   }, [URL])
-
-  function oula() {
-
-    return breadcrumbResultMicroData(URL, 'string');
-  }
-
 
   useEffect(() => {
     if (URL.path) {
@@ -352,7 +396,7 @@ export default function BreadCrumb(): JSX.Element {
       switch (format) {
         case 'jsonLD':
           setBreadcrumbResult({
-            jsonLD: formatJsonLD(),
+            jsonLD: outputformated('jsonLD'),
             javascript: '',
             microdata: ''
           })
@@ -360,7 +404,7 @@ export default function BreadCrumb(): JSX.Element {
         case 'javascript':
           setBreadcrumbResult({
             jsonLD: '',
-            javascript: formatJavascript(),
+            javascript: outputformated('javascript'),
             microdata: ''
           })
           break;
@@ -368,7 +412,7 @@ export default function BreadCrumb(): JSX.Element {
           setBreadcrumbResult({
             jsonLD: '',
             javascript: '',
-            microdata: oula(),
+            microdata: outputformated('microdata'),
           })
           break;
       }
@@ -436,7 +480,7 @@ export default function BreadCrumb(): JSX.Element {
       <div className={S.content}>
         <div className={S.seo_result}>
           <SyntaxHighlighter
-            language="javascript"
+            language={format === 'microdata' ? 'html' : 'javascript'}
             style={atomDark}
             wrapLongLines={true}
           >
@@ -459,5 +503,3 @@ export default function BreadCrumb(): JSX.Element {
     </section>
   )
 }
-
-

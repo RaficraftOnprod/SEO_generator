@@ -1,0 +1,53 @@
+@import './mixin/mixin.scss';
+
+.text {
+  &_white {
+    color: white;
+  }
+}
+
+.burger_container {
+  @include flex();
+  @include responsiveContainer(220px);
+
+  .burger_menu {
+    @include size(1.75rem);
+    position: relative;
+    content: "";
+    @include flexCenter();
+
+    span,
+    span:before,
+    span:after {
+      position: absolute;
+      @include responsiveContainer(100%);
+      content: '';
+      height: 2px;
+      border-radius: 1px;
+      background-color: rgb(224, 224, 224);
+      transition: 0.3s ease;
+    }
+
+    span:before {
+      transform: translateY(-9px);
+    }
+
+    span:after {
+      transform: translateY(9px);
+    }
+
+    &:hover {
+      span:before {
+        transform: translateY(-10px);
+      }
+
+      span:after {
+        transform: translateY(10px);
+      }
+    }
+  }
+}
+
+.cursor {
+  cursor: pointer;
+}

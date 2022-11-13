@@ -3,13 +3,13 @@ import { Header } from "./Header/Header";
 import { Aside } from "./Aside/Aside";
 import { Footer } from "./Footer/Footer";
 
-export function Layout({children}: {children : JSX.Element | JSX.Element}): JSX.Element {
+export function Layout({ children }: { children: JSX.Element | JSX.Element }): JSX.Element {
   return (
     <>
-      {/* <Header></Header> */}
+      <Header></Header>
       <main>
         <Aside></Aside>
-          {children}        
+        {children}
       </main>
       {/* <Footer></Footer> */}
     </>

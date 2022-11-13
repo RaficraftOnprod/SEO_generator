@@ -1,0 +1,13 @@
+@import '../../../../styles/mixin/mixin.scss';
+
+.breadcrumb {
+  @include flex(row, flex-start, center);
+  gap: 1rem;
+  color: white;
+  height: 100%;
+
+  .content {
+    @include flex(row, flex-start, center);
+    gap: 1rem;
+  }
+}
