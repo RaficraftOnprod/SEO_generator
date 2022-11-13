@@ -23,6 +23,11 @@
   details {
     @include flex(column);
     flex: 1;
+
+    > div {
+      padding: 1rem 0 0 0.5rem;
+      border-top: 1px solid rgba(105, 105, 105, 0.2);
+    }
   }
 
   summary {
@@ -45,24 +50,25 @@
     .clipboard {
       position: absolute;
       right: 0;
-      @include size(2.5rem);
+      @include size(2rem);
       border: none;
       border-bottom-left-radius: 0.5rem;
       cursor: pointer;
       transition: .3s ease;
 
       svg {
-        @include size(1.5rem);
+        @include size(1rem);
         transition: .3 ease;
+        margin: auto;
       }
 
       &:hover {
-        box-shadow: -3px 3px 8px 0px rgba(180, 180, 180, 0.4) inset, 3px -3px 8px 0px rgba(197, 197, 197, 0.4) inset,
+        box-shadow: -3px 3px 4px 0px rgba(180, 180, 180, 0.4) inset, 3px -3px 4px 0px rgba(197, 197, 197, 0.4) inset,
           -2px 2px 4px 0px rgb(87, 87, 87);
         ;
 
         svg {
-          transform: scale(1.05);
+          transform: scale(1.1);
         }
       }
     }

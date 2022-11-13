@@ -20,8 +20,6 @@ export default function BreadCrumb(): JSX.Element {
   });
 
   const [description, setDescription] = useState<string | false>(false)
-
-
   const [format, setFormat] = useState('javascript');
   const [breadcrumbResult, setBreadcrumbResult] = useState<any>({
     jsonLD: 'Type your url on the input',
@@ -322,7 +320,7 @@ export default function BreadCrumb(): JSX.Element {
         microdata: 'Type your url on the input'
       }
     )
-    dispatch.breadcrumb(jsonLDItem())
+    dispatch.breadcrumb(jsonLDItem(domainName))
   }, [URL, domainName])
 
   useEffect(() => {
