@@ -4,30 +4,23 @@ import S from './Breadcrumb.module.scss';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { debounce } from '../../src/utils/debounce';
-import { IconOpenPadlock } from "../../src/assets/svg/icones";
 import { UI_context, UI_context_type } from "../../src/context/UI_Provider";
-
-type URLTypes = {
-  https: boolean,
-  www: boolean,
-  path: string,
-  decompose: string[],
-  name: string[]
-}
-
+import { URLTypes } from "./type";
+import { IconeClipboard } from "../../src/assets/svg/icones";
 
 export default function BreadCrumb(): JSX.Element {
 
-  const { UI, dispatch } = useContext(UI_context) as UI_context_type
+  const regexURL = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/gm;
+  const { dispatch } = useContext(UI_context) as UI_context_type
   const [URL, setURL] = useState<URLTypes>({
     https: false,
     www: false,
     path: '',
-    decompose: [],
-    name: []
+    decompose: []
   });
 
   const [description, setDescription] = useState<string | false>(false)
+
 
   const [format, setFormat] = useState('javascript');
   const [breadcrumbResult, setBreadcrumbResult] = useState<any>({
@@ -35,12 +28,12 @@ export default function BreadCrumb(): JSX.Element {
     javascript: 'Type your url on the input',
     microdata: 'Type your url on the input'
   })
-  const [breadcrumbJSX, setBreadcrumbJSX] = useState([])
-
-  const regexURL = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/gm;
+  const [domainName, setDomainName] = useState<boolean>(false);
 
   const inputURL = useRef(null)
+  const clipboardRef = useRef<HTMLTextAreaElement>(null)
   const [inputs, setInputs] = useState<any>(false)
+
   let inputRef = useRef<any>([]);
   let inputDescription = useRef<any>([])
 
@@ -67,8 +60,7 @@ export default function BreadCrumb(): JSX.Element {
           https: path.includes('https'),
           www: path.includes('www'),
           path: path,
-          decompose: decomposeURL,
-          name: decomposeURL,
+          decompose: decomposeURL
         })
 
 
@@ -77,8 +69,7 @@ export default function BreadCrumb(): JSX.Element {
           https: false,
           www: false,
           path: '',
-          decompose: [],
-          name: [],
+          decompose: []
         })
       }
     }
@@ -88,7 +79,7 @@ export default function BreadCrumb(): JSX.Element {
     setURL((state) => {
       return {
         ...state,
-        name: { ...state.name, [idx]: inputRef.current[idx].value }
+        decompose: { ...state.decompose, [idx]: inputRef.current[idx].value }
       }
     })
   }
@@ -98,6 +89,8 @@ export default function BreadCrumb(): JSX.Element {
   }
 
   function dynamicInputs() {
+
+    const start = domainName ? 0 : 1
 
     const dynamic = URL.decompose.map((el: string, idx: number) => {
 
@@ -135,7 +128,7 @@ export default function BreadCrumb(): JSX.Element {
             </div>
           </div>)
       }
-      if (idx > 0 && idx < URL.decompose.length - 1) {
+      if (idx >= start && idx < URL.decompose.length - 1) {
         return pageInput
       } else {
         return []
@@ -154,7 +147,8 @@ export default function BreadCrumb(): JSX.Element {
       return 'Type your url on the input'
     }
 
-    let output = ''
+    const withOrder = Object.values(URL.decompose).length > 2 || domainName ? true : false;
+    let output = '';
 
     switch (type) {
 
@@ -169,15 +163,16 @@ export default function BreadCrumb(): JSX.Element {
 
       case 'jsonLD':
 
-        output =
+        output +=
           `<script type="application/ld+json">
 [{
   "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  itemListOrder: 'ItemListOrderAscending',
-    itemListElement:
+  "@type": "BreadcrumbList",`
+        if (withOrder) output += `\n  itemListOrder: 'ItemListOrderAscending',\n`;
+        output +=
+          `itemListElement:
   [{
-    ${JSON.stringify(jsonLDItem(), null, '\t').slice(7, -3).trim()}
+    \t${JSON.stringify(jsonLDItem(domainName), null, '\t').slice(7, -3).trim()}
   }]
 }]
 </script>`
@@ -189,11 +184,12 @@ export default function BreadCrumb(): JSX.Element {
   const structuredData = 
 [{
   '@context': 'https://schema.org',
-  '@type': 'BreadcrumbList',
-  itemListOrder: 'ItemListOrderAscending',
-  itemListElement: 
+  '@type': 'BreadcrumbList',`
+        if (withOrder) output += `\n  itemListOrder: 'ItemListOrderAscending',\n`;
+        output +=
+          `  itemListElement:
   [{
-    ${JSON.stringify(jsonLDItem(), null, '\t').slice(7, -3).trim()}
+    \t${JSON.stringify(jsonLDItem(domainName), null, '\t').slice(7, -3).trim()}
   }]
 }];
 
@@ -212,54 +208,52 @@ export default function BreadCrumb(): JSX.Element {
 
   function htmlItem() {
     let res = ''
+    const start = domainName ? 0 : 1
+    for (let i = start; i < URL.decompose.length; i++) {
 
-    for (let i = 0; i < URL.decompose.length; i++) {
 
-      if (i > 0) {
 
+      res +=
+        `   <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">`
+
+      if (i < URL.decompose.length - 1) {
         res +=
-          `   <li itemProp="itemListElement" itemScope itemType="https://schema.org/ListItem">`
+          `<a itemProp="item" href="${rebuildURL(i)}">
+      <span itemProp="name">${URL.decompose[i]}</span></a>
+      <meta itemProp="position" content="${i + 1}" />`
 
-        if (i < URL.decompose.length - 1) {
+      } else {
+        res +=
+          `<a itemProp="item" href="${rebuildURL(i)}">
+      <span itemProp="name">${URL.decompose[i]}</span></a>
+      <meta itemProp="position" content="${i + 1}" />
+        `
+
+        if (i === URL.decompose.length - 1 && description) {
           res +=
-            `<a itemProp="item" href="https://example.com/books">
-        <span itemProp="name">Books</span></a>
-        <meta itemProp="position" content="1" />`
-
-        } else {
-          res +=
-            `<a itemProp="item" href="https://example.com/books">
-        <span itemProp="name">Books</span></a>
-        <meta itemProp="position" content="1" />
-          `
-
-          if (i === URL.decompose.length - 1 && description) {
-            res +=
-              `<meta itemProp="description" content="${description}" />`
-          }
+            `<meta itemProp="description" content="${description}" />`
         }
-
-        res += `\n\t</li>\n`
-
       }
+      res += `\n\t</li>\n`
     }
     return res;
   }
 
-  function jsonLDItem() {
+  function jsonLDItem(offset: boolean) {
 
     let res = []
     let obj: any = {}
+    const start = offset ? 0 : 1
 
     for (let i = 0; i < URL.decompose.length; i++) {
 
-      if (i > 0) {
+      if (i >= start) {
 
         if (i < URL.decompose.length - 1) {
           obj = {
             "@type": "ListItem",
             "position": i,
-            "name": URL.name[i].replace('.html', ''),
+            "name": URL.decompose[i].replace('.html', ''),
             "item": rebuildURL(i),
           }
 
@@ -267,7 +261,7 @@ export default function BreadCrumb(): JSX.Element {
           obj = {
             "@type": "ListItem",
             "position": i,
-            "name": URL.name[i].replace('.html', '')
+            "name": URL.decompose[i].replace('.html', '')
           }
 
           if (i === URL.decompose.length - 1 && description) {
@@ -296,7 +290,27 @@ export default function BreadCrumb(): JSX.Element {
     return res;
   }
 
+  async function copyToClipboard() {
+    if (clipboardRef.current) {
 
+      const text = clipboardRef.current.value
+      console.log(text);
+
+      if (!navigator?.clipboard) {
+        console.warn('Clipboard not supported')
+        return false
+      }
+
+      // Try to save to clipboard then save it in the state if worked
+      try {
+        await navigator.clipboard.writeText(text)
+        return true
+      } catch (error) {
+        console.warn('Copy failed', error)
+        return false
+      }
+    }
+  }
 
   useEffect(() => {
     setInputs(false)
@@ -309,7 +323,7 @@ export default function BreadCrumb(): JSX.Element {
       }
     )
     dispatch.breadcrumb(jsonLDItem())
-  }, [URL])
+  }, [URL, domainName])
 
   useEffect(() => {
     if (URL.path) {
@@ -339,7 +353,8 @@ export default function BreadCrumb(): JSX.Element {
           break;
       }
     }
-  }, [URL, format, description]);
+  }, [URL, format, description, domainName]);
+
 
   return (
     <section className={`main_content ${S.container}`}>
@@ -357,42 +372,52 @@ export default function BreadCrumb(): JSX.Element {
           />
         </div>
         {URL.path ? (
-          <div className={S.format}>
+          <div className={`${S.header_options} full_width`}>
+            <div className={S.format}>
+              <div className={`bloc_input`}>
+                <label htmlFor="javascript">Javascript :</label>
+                <input
+                  type="radio"
+                  id="javascript"
+                  name="format"
+                  defaultValue="javascript"
+                  onClick={() => { setFormat('javascript') }}
+                  checked={format === 'javascript'}
+                />
+              </div>
+
+              <div className={`bloc_input`}>
+                <label htmlFor="jsonLD">JsonLD :</label>
+                <input
+                  type="radio"
+                  id="jsonLD"
+                  name="format"
+                  defaultValue="jsonLD"
+                  onClick={() => { setFormat('jsonLD') }}
+                  checked={format === 'jsonLD'}
+                />
+              </div>
+
+              <div className={`bloc_input`}>
+                <label htmlFor="microdata">Microdata :</label>
+                <input
+                  type="radio"
+                  id="microdata"
+                  name="format"
+                  defaultValue="microdata"
+                  onClick={() => { setFormat('microdata') }}
+                  checked={format === 'microdata'}
+                />
+              </div>
+            </div>
             <div className={`bloc_input`}>
-              <label htmlFor="javascript">Javascript</label>
+              <label>Include domain name :</label>
               <input
-                type="radio"
-                id="javascript"
-                name="format"
-                defaultValue="javascript"
-                onClick={() => { setFormat('javascript') }}
-                checked={format === 'javascript'}
+                type="checkbox"
+                onClick={() => setDomainName(!domainName)}
               />
             </div>
 
-            <div className={`bloc_input`}>
-              <label htmlFor="jsonLD">JsonLD</label>
-              <input
-                type="radio"
-                id="jsonLD"
-                name="format"
-                defaultValue="jsonLD"
-                onClick={() => { setFormat('jsonLD') }}
-                checked={format === 'jsonLD'}
-              />
-            </div>
-
-            <div className={`bloc_input`}>
-              <label htmlFor="microdata">microdata</label>
-              <input
-                type="radio"
-                id="microdata"
-                name="format"
-                defaultValue="microdata"
-                onClick={() => { setFormat('microdata') }}
-                checked={format === 'microdata'}
-              />
-            </div>
           </div>
         ) : null}
 
@@ -401,6 +426,11 @@ export default function BreadCrumb(): JSX.Element {
 
       <div className={S.content}>
         <div className={S.seo_result}>
+          <button type="button" className={S.clipboard} onClick={(() => copyToClipboard())}>
+            <IconeClipboard />
+          </button>
+
+          <textarea hidden value={breadcrumbResult[format]} ref={clipboardRef}></textarea>
           <SyntaxHighlighter
             language={format === 'microdata' ? 'html' : 'javascript'}
             style={atomDark}
@@ -422,6 +452,9 @@ export default function BreadCrumb(): JSX.Element {
 
       </div>
 
-    </section>
+    </section >
   )
 }
+
+
+

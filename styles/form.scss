@@ -1,9 +1,19 @@
 @import "./mixin/mixin.scss";
 
 .bloc_input {
-  padding: 0.25rem 0;
+  padding: 0.25rm;
   @include flex(row, flex-start, center);
+  gap: 0.25rem;
   margin: 0 0 1rem 0;
+
+  label {
+    white-space: nowrap;
+  }
+
+  input[type=checkbox] {
+    @include size(1rem);
+    box-sizing: content-box;
+  }
 
   &_row {
     gap: 1rem;
