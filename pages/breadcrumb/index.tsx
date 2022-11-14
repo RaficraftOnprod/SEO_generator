@@ -5,8 +5,15 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { debounce } from '../../src/utils/debounce';
 import { UI_context, UI_context_type } from "../../src/context/UI_Provider";
-import { URLTypes } from "./type";
+
 import { IconeClipboard } from "../../src/assets/svg/icones";
+
+type URLTypes = {
+  https: boolean,
+  www: boolean,
+  path: string,
+  decompose: string[]
+}
 
 export default function BreadCrumb(): JSX.Element {
 
